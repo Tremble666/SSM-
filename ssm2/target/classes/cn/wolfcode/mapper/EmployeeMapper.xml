@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.wolfcode.mapper.EmployeeMapper" >
+  <resultMap id="BaseResultMap" type="cn.wolfcode.domain.Employee" >
+    <id column="id" property="id" jdbcType="BIGINT" />
+    <result column="name" property="name" jdbcType="VARCHAR" />
+    <result column="password" property="password" jdbcType="VARCHAR" />
+    <result column="email" property="email" jdbcType="VARCHAR" />
+    <result column="age" property="age" jdbcType="INTEGER" />
+    <result column="admin" property="admin" jdbcType="BIT" />
+    <association javaType="Department" property="dept" columnPrefix="d_">
+      <result column="id" property="id"/>
+      <result column="name" property="name"/>
+      <result column="sn" property="sn"/>
+    </association>
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long" >
+    delete from employee
+    where id = #{id,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="cn.wolfcode.domain.Employee" useGeneratedKeys="true" keyProperty="id" >
+    insert into employee (name, password, email, 
+      age, admin, deptId)
+    values (#{name,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, 
+      #{age,jdbcType=INTEGER}, #{admin,jdbcType=BIT}, #{dept.id,jdbcType=BIGINT})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="cn.wolfcode.domain.Employee" >
+    update employee
+   <!-- <set>
+      <if test="name != null">
+        name = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="password != null">test
+        password = #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="dept != null and dept.id != null">
+        deptId = #{dept.id,jdbcType=BIGINT}
+      </if>
+    </set>-->
+    set name = #{name,jdbcType=VARCHAR},
+      password = #{password,jdbcType=VARCHAR},
+      email = #{email,jdbcType=VARCHAR},
+      age = #{age,jdbcType=INTEGER},
+      admin = #{admin,jdbcType=BIT},
+      deptId = #{dept.id,jdbcType=BIGINT}
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Long" >
+    select e.id, e.name, e.password, e.email, e.age, e.admin,
+    d.id AS d_id, d.name AS d_name, d.sn AS d_sn
+    from employee e LEFT JOIN department d ON e.deptId = d.id
+    where e.id = #{id,jdbcType=BIGINT}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    select e.id, e.name, e.password, e.email, e.age, e.admin,
+    d.id AS d_id, d.name AS d_name, d.sn AS d_sn
+    from employee e LEFT JOIN department d ON e.deptId = d.id
+  </select>
+  <sql id="where_sql">
+    <where>
+      <if test="keyword != null">
+        AND (e.name LIKE CONCAT('%', #{keyword} ,'%') OR e.email LIKE CONCAT('%', #{keyword} ,'%'))
+      </if>
+      <if test="deptId != -1">
+        AND e.deptId = #{deptId}
+      </if>
+    </where>
+  </sql>
+  <select id="queryForCount" resultType="int">
+      select COUNT(e.id)
+      from employee e LEFT JOIN department d ON e.deptId = d.id
+      <include refid="where_sql"/>
+  </select>
+  <select id="queryForList" resultMap="BaseResultMap" >
+    select e.id, e.name, e.password, e.email, e.age, e.admin,
+    d.id AS d_id, d.name AS d_name, d.sn AS d_sn
+    from employee e LEFT JOIN department d ON e.deptId = d.id
+    <include refid="where_sql"/>
+    LIMIT #{start}, #{pageSize}
+  </select>
+  <select id="queryByNameAndPassword" resultType="employee">
+      select e.id, e.name, e.password, e.email, e.age, e.admin
+      from employee e
+      WHERE e.name = #{name} AND e.password = #{password}
+  </select>
+</mapper>
